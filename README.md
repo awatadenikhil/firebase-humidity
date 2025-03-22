@@ -84,16 +84,16 @@
 
 execute below command to run locally
 
-1>firebase serve                # to run the project
-2>firebase deploy
+1. firebase serve                # to run the project
+2. firebase deploy
 
 # create realtime database
 
-1> go to all project 
-2> click on real time database
-3> click on create database
-4> select start with test mode
-5> copy URL (https://fir-humidity-8c9c7-default-rtdb.firebaseio.com)
+1. go to all project 
+2. click on real time database
+3. click on create database
+4. select start with test mode
+5. copy URL (https://fir-humidity-8c9c7-default-rtdb.firebaseio.com)
 
 
 # deploy URL
