@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Data Graph</title>
+
+    <!-- Load jQuery library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Load Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+</head>
+<body>
+    <h1>Weather Data Graph</h1>
+    
+    <!-- Plotly chart will be drawn inside this DIV -->
+    <div id="myDiv"></div>
+
+    <script>
+        function fetchWeatherData() {
+            $.get('https://fir-humidity-8c9c7-default-rtdb.firebaseio.com/humidityInfo.json')
+                .done(function(data) {
+                    if (!data) {
+                        alert("No data received from API");
+                        return;
+                    }
+
+                    var times = [];
+                    var temperatures = [];
+                    var humidity = [];
+
+                    // Convert object data to an array
+                    var dataArray = Object.values(data);
+
+                    // Sort by DateTime
+                    dataArray.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+
+                    // Extract values
+                    dataArray.forEach(function(item) {
+                        times.push(item.DateTime);
+                        temperatures.push(item.Temperature);
+                        humidity.push(item.Humidity);
+                    });
+
+                    // Trace1 (Temperature)
+                    var trace1 = {
+                        x: times,
+                        y: temperatures,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Temperature (°C)',
+                        marker: { color: 'red' }
+                    };
+
+                    // Trace2 (Humidity)
+                    var trace2 = {
+                        x: times,
+                        y: humidity,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Humidity (%)',
+                        marker: { color: 'blue' }
+                    };
+
+                    var plotData = [trace1, trace2];
+
+                    var layout = {
+                        title: 'Weather Data (Temperature and Humidity)',
+                        xaxis: { title: 'Time' },
+                        yaxis: { title: 'Value' }
+                    };
+
+                    Plotly.newPlot('myDiv', plotData, layout);
+                })
+                .fail(function() {
+                    alert("Failed to load weather data.");
+                });
+        }
+
+        // Fetch data initially
+        fetchWeatherData();
+
+        // Optional: Refresh data every minute
+        setInterval(fetchWeatherData, 60000);
+    </script>
+</body>
+</html>
