@@ -98,3 +98,8 @@ execute below command to run locally
 
 # deploy URL
 https://fir-humidity-8c9c7.web.app
+
+
+# Arduino 
+library librarry https://github.com/adafruit/DHT-sensor-library
+Note : search dh11 and install dht sensor library

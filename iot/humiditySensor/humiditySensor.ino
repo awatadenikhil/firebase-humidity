@@ -3,8 +3,13 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
+#include "DHT.h"
 
+#define DPIN 4        //Pin to connect DHT sensor (GPIO number) D2
+#define DTYPE DHT11   // Define DHT 11 or DHT22 sensor type
 #define LED 2 // Define blinking LED pin 2
+
+DHT dht(DPIN,DTYPE);
 
 const char* ssid = "Nikhil_Jio";      // Replace with your WiFi SSID
 const char* password = "nikhil31";    // Replace with your WiFi password
@@ -79,7 +84,7 @@ void setup() {
         Serial.print(".");
     }
     Serial.println("\nConnected to WiFi!");
-
+    dht.begin();
     // Ignore SSL certificate validation (use only for testing)
     client.setInsecure();
 
@@ -112,16 +117,19 @@ void sendData() {
 
         Serial.println("Time "+currentDateTime);
 
-        // JSON Data in the required format
-        // String jsonData = R"rawliteral(
-        // {
-        //     "DateTime": 56,
-        //     "Humidity": 20,
-        //     "Temperature": 10
-        // }
-        // )rawliteral";
+        float tc = dht.readTemperature(false);  //Read temperature in C
+        float tf = dht.readTemperature(true);   //Read Temperature in F
+        float hu = dht.readHumidity();          //Read Humidity
 
-        String jsonData = "{ \"DateTime\": \"" + currentDateTime + "\", \"Humidity\": 20, \"Temperature\": 10 }";
+        Serial.print("Temp: ");
+        Serial.print(tc);
+        Serial.print(" C, ");
+        Serial.print(tf);
+        Serial.print(" F, Hum: ");
+        Serial.print(hu);
+        Serial.println("%");
+
+        String jsonData = "{ \"DateTime\": \"" + currentDateTime + "\", \"Humidity\":\"" + String(hu) + "\", \"Temperature\": \"" + String(tc) + "\" }";
 
         // HTTP Request
         client.print(String("POST ") + "/humidityInfo.json HTTP/1.1\r\n" +
