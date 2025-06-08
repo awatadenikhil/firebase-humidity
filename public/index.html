@@ -1,88 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Data Graph</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather Data Graph and Table</title>
 
-    <!-- Load jQuery library -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <!-- Load Plotly.js library -->
-    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+  <!-- Load jQuery and Plotly -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .pagination {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .pagination button {
+      padding: 5px 10px;
+      margin: 0 5px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Room Humidity</h1>
-    
-    <!-- Plotly chart will be drawn inside this DIV -->
-    <div id="myDiv"></div>
+  <h1>Room Humidity</h1>
 
-    <script>
-        function fetchWeatherData() {
-            $.get('https://fir-humidity-8c9c7-default-rtdb.firebaseio.com/humidityInfo.json')
-                .done(function(data) {
-                    if (!data) {
-                        alert("No data received from API");
-                        return;
-                    }
+  <!-- Plotly chart -->
+  <div id="myDiv"></div>
 
-                    var times = [];
-                    var temperatures = [];
-                    var humidity = [];
+  <!-- Table for weather data -->
+  <table id="weatherTable">
+    <thead>
+      <tr>
+        <th>Date Time</th>
+        <th>Temperature (°C)</th>
+        <th>Humidity (%)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-                    // Convert object data to an array
-                    var dataArray = Object.values(data);
+  <!-- Pagination controls -->
+  <div class="pagination">
+    <button id="prevPage">Previous</button>
+    <span id="pageInfo"></span>
+    <button id="nextPage">Next</button>
+  </div>
 
-                    // Sort by DateTime
-                    dataArray.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+  <script>
+    const recordsPerPage = 20;
+    let weatherData = [];
+    let currentPage = 1;
 
-                    // Extract values
-                    dataArray.forEach(function(item) {
-                        times.push(item.DateTime);
-                        temperatures.push(item.Temperature);
-                        humidity.push(item.Humidity);
-                    });
+    function fetchWeatherData() {
+      $.get('https://fir-humidity-8c9c7-default-rtdb.firebaseio.com/humidityInfo.json')
+        .done(function(data) {
+          if (!data) {
+            alert("No data received from API");
+            return;
+          }
 
-                    // Trace1 (Temperature)
-                    var trace1 = {
-                        x: times,
-                        y: temperatures,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: 'Temperature (°C)',
-                        marker: { color: 'red' }
-                    };
+          const dataArray = Object.values(data);
 
-                    // Trace2 (Humidity)
-                    var trace2 = {
-                        x: times,
-                        y: humidity,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: 'Humidity (%)',
-                        marker: { color: 'blue' }
-                    };
+          // Sort for graph (ascending)
+          dataArray.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
 
-                    var plotData = [trace1, trace2];
+          // Plot graph
+          const times = dataArray.map(item => item.DateTime);
+          const temperatures = dataArray.map(item => item.Temperature);
+          const humidity = dataArray.map(item => item.Humidity);
 
-                    var layout = {
-                        title: 'Weather Data (Temperature and Humidity)',
-                        xaxis: { title: 'Time' },
-                        yaxis: { title: 'Value' }
-                    };
+          const trace1 = {
+            x: times,
+            y: temperatures,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Temperature (°C)',
+            marker: { color: 'red' }
+          };
 
-                    Plotly.newPlot('myDiv', plotData, layout);
-                })
-                .fail(function() {
-                    alert("Failed to load weather data.");
-                });
-        }
+          const trace2 = {
+            x: times,
+            y: humidity,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Humidity (%)',
+            marker: { color: 'blue' }
+          };
 
-        // Fetch data initially
-        fetchWeatherData();
+          const layout = {
+            title: 'Weather Data (Temperature and Humidity)',
+            xaxis: { title: 'Time' },
+            yaxis: { title: 'Value' }
+          };
 
-        // Optional: Refresh data every minute
-        setInterval(fetchWeatherData, 60000);
-    </script>
+          Plotly.newPlot('myDiv', [trace1, trace2], layout);
+
+          // Sort for table (descending)
+          weatherData = [...dataArray].sort((a, b) => new Date(b.DateTime) - new Date(a.DateTime));
+          currentPage = 1;
+          renderTablePage();
+        })
+        .fail(function() {
+          alert("Failed to load weather data.");
+        });
+    }
+
+    function renderTablePage() {
+      const tbody = $('#weatherTable tbody');
+      tbody.empty();
+
+      const start = (currentPage - 1) * recordsPerPage;
+      const end = Math.min(start + recordsPerPage, weatherData.length);
+      const pageData = weatherData.slice(start, end);
+
+      pageData.forEach(item => {
+        const row = `<tr>
+          <td>${item.DateTime}</td>
+          <td>${item.Temperature}</td>
+          <td>${item.Humidity}</td>
+        </tr>`;
+        tbody.append(row);
+      });
+
+      $('#pageInfo').text(`Page ${currentPage} of ${Math.ceil(weatherData.length / recordsPerPage)}`);
+      $('#prevPage').prop('disabled', currentPage === 1);
+      $('#nextPage').prop('disabled', end >= weatherData.length);
+    }
+
+    // Pagination button events
+    $('#prevPage').click(() => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTablePage();
+      }
+    });
+
+    $('#nextPage').click(() => {
+      if ((currentPage * recordsPerPage) < weatherData.length) {
+        currentPage++;
+        renderTablePage();
+      }
+    });
+
+    // Initial fetch
+    fetchWeatherData();
+
+    // Optional: auto-refresh every minute
+    setInterval(fetchWeatherData, 60000);
+  </script>
 </body>
 </html>
